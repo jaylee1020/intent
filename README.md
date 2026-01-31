@@ -42,4 +42,4 @@ No data leaves your device.
 
 ---
 
-Built with intention for Swift Student Challenge 2025.
+Built with intention for Swift Student Challenge 2026.
