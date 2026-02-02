@@ -224,9 +224,7 @@ struct FrameThumbnail: View {
     let originalImage: UIImage
     let onTap: () -> Void
 
-    private var croppedImage: UIImage? {
-        ImageProcessor.cropImage(originalImage, with: frame.cropRect)
-    }
+    @State private var croppedImage: UIImage?
 
     var body: some View {
         Button(action: {
@@ -251,6 +249,12 @@ struct FrameThumbnail: View {
             .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.small))
         }
         .buttonStyle(.plain)
+        .task {
+            // Cache the cropped image on first load
+            if croppedImage == nil {
+                croppedImage = ImageProcessor.cropImage(originalImage, with: frame.cropRect)
+            }
+        }
     }
 }
 
@@ -264,10 +268,7 @@ struct FullScreenCropView: View {
     @State private var showingSaveSuccess = false
     @State private var isSaving = false
     @State private var showingPermissionAlert = false
-
-    private var croppedImage: UIImage? {
-        ImageProcessor.cropImage(originalImage, with: frame.cropRect)
-    }
+    @State private var croppedImage: UIImage?
 
     var body: some View {
         ZStack {
@@ -352,6 +353,12 @@ struct FullScreenCropView: View {
             Text("The cropped photo has been saved to your photo library.")
         }
         .permissionDeniedAlert(isPresented: $showingPermissionAlert, for: .photoLibrary)
+        .task {
+            // Cache the cropped image on first load
+            if croppedImage == nil {
+                croppedImage = ImageProcessor.cropImage(originalImage, with: frame.cropRect)
+            }
+        }
     }
 
     private func saveToPhotoLibrary() {

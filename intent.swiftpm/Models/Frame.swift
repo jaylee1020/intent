@@ -81,7 +81,12 @@ struct CropRect: Codable {
     
     /// Create from CGRect and image size
     static func from(rect: CGRect, imageSize: CGSize) -> CropRect {
-        CropRect(
+        // Guard against division by zero
+        guard imageSize.width > 0, imageSize.height > 0 else {
+            return CropRect()
+        }
+
+        return CropRect(
             x: rect.origin.x / imageSize.width,
             y: rect.origin.y / imageSize.height,
             width: rect.width / imageSize.width,

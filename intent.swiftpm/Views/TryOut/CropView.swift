@@ -62,10 +62,11 @@ struct CropView: View {
     // MARK: - Crop Image View
     @ViewBuilder
     private func cropImageView(geometry: GeometryProxy) -> some View {
-        let imageHeight = geometry.size.height - 180 // Leave room for controls
+        let imageHeight = max(geometry.size.height - 180, 1) // Leave room for controls, ensure non-zero
 
         ZStack {
-            if let image = project.originalImage {
+            if let image = project.originalImage,
+               image.size.height > 0, image.size.width > 0 {
                 let imageAspect = image.size.width / image.size.height
                 let containerAspect = geometry.size.width / imageHeight
                 let displaySize = calculateDisplaySize(
@@ -99,6 +100,11 @@ struct CropView: View {
     }
 
     private func calculateDisplaySize(imageAspect: CGFloat, containerAspect: CGFloat, containerWidth: CGFloat, imageHeight: CGFloat) -> CGSize {
+        // Guard against division by zero
+        guard imageAspect > 0 else {
+            return CGSize(width: containerWidth, height: imageHeight)
+        }
+
         if imageAspect > containerAspect {
             return CGSize(width: containerWidth, height: containerWidth / imageAspect)
         } else {
@@ -181,7 +187,8 @@ struct CropView: View {
 
     // MARK: - Helper Methods
     private func adjustCropRectForAspectRatio() {
-        guard let ratio = selectedAspectRatio.ratio else { return }
+        guard let ratio = selectedAspectRatio.ratio, ratio > 0 else { return }
+        guard cropRect.height > 0, cropRect.width > 0 else { return }
 
         // Maintain center, adjust dimensions
         let centerX = cropRect.x + cropRect.width / 2
@@ -202,7 +209,8 @@ struct CropView: View {
         newWidth = min(newWidth, min(centerX * 2, (1 - centerX) * 2, 1))
         newHeight = min(newHeight, min(centerY * 2, (1 - centerY) * 2, 1))
 
-        // Recalculate to maintain aspect ratio
+        // Recalculate to maintain aspect ratio (guard against zero)
+        guard newHeight > 0, newWidth > 0 else { return }
         if newWidth / newHeight > ratio {
             newWidth = newHeight * ratio
         } else {
@@ -216,6 +224,14 @@ struct CropView: View {
     }
 
     private func saveFrame() {
+        // Validate crop rect has sensible values
+        guard cropRect.width > 0.01, cropRect.height > 0.01,
+              cropRect.x >= 0, cropRect.y >= 0,
+              cropRect.x + cropRect.width <= 1.01,
+              cropRect.y + cropRect.height <= 1.01 else {
+            return
+        }
+
         var updatedProject = project
         let frame = Frame(cropRect: cropRect, aspectRatio: selectedAspectRatio)
         updatedProject.frames.append(frame)

@@ -17,6 +17,7 @@ struct TryOutTabView: View {
     @State private var showingRenameAlert = false
     @State private var showingCameraPermissionAlert = false
     @State private var showingPhotoLibraryPermissionAlert = false
+    @State private var showingImageLoadError = false
 
     /// Check if camera is available on this device
     private var isCameraAvailable: Bool {
@@ -89,6 +90,11 @@ struct TryOutTabView: View {
             }
             .permissionDeniedAlert(isPresented: $showingCameraPermissionAlert, for: .camera)
             .permissionDeniedAlert(isPresented: $showingPhotoLibraryPermissionAlert, for: .photoLibrary)
+            .alert("Import Failed", isPresented: $showingImageLoadError) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("Unable to load the selected image. Please try again with a different photo.")
+            }
             .overlay {
                 if isLoading {
                     LoadingOverlay()
@@ -176,6 +182,8 @@ struct TryOutTabView: View {
                     await MainActor.run {
                         isLoading = false
                         selectedItem = nil
+                        HapticManager.error()
+                        showingImageLoadError = true
                     }
                     return
                 }
@@ -187,6 +195,10 @@ struct TryOutTabView: View {
                         HapticManager.success()
                         let project = Project(originalImageData: compressedData)
                         projectStorage.addProject(project)
+                    } else {
+                        // Image creation or compression failed
+                        HapticManager.error()
+                        showingImageLoadError = true
                     }
                     isLoading = false
                     selectedItem = nil
@@ -195,6 +207,8 @@ struct TryOutTabView: View {
                 await MainActor.run {
                     isLoading = false
                     selectedItem = nil
+                    HapticManager.error()
+                    showingImageLoadError = true
                 }
                 print("Failed to load image: \(error)")
             }
@@ -259,7 +273,7 @@ struct CameraPicker: UIViewControllerRepresentable {
     }
 
     class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
-        let parent: CameraPicker
+        var parent: CameraPicker
 
         init(_ parent: CameraPicker) {
             self.parent = parent
@@ -269,10 +283,13 @@ struct CameraPicker: UIViewControllerRepresentable {
             // Dismiss first, then process
             parent.isPresented = false
 
+            // Capture the callback to avoid retain cycle
+            let onImageCaptured = parent.onImageCaptured
+
             // Process image after a short delay to ensure dismissal completes
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 if let image = info[.originalImage] as? UIImage {
-                    self.parent.onImageCaptured(image)
+                    onImageCaptured(image)
                 }
             }
         }

@@ -258,7 +258,7 @@ struct DraggableCropRect: View {
         }
 
         // Apply aspect ratio constraint if needed
-        if let ratio = aspectRatio.ratio {
+        if let ratio = aspectRatio.ratio, ratio > 0, newRect.height > 0, newRect.width > 0 {
             let currentRatio = newRect.width / newRect.height
             if currentRatio > ratio {
                 newRect.width = newRect.height * ratio
