@@ -55,7 +55,7 @@ struct CropView: View {
             }
             .toolbarBackground(.black, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
-            .permissionDeniedAlert(isPresented: $showingPermissionAlert, for: .photoLibrary)
+            .permissionDeniedAlert(isPresented: $showingPermissionAlert, for: .photoLibrarySave)
         }
     }
 
@@ -232,7 +232,11 @@ struct CropView: View {
             return
         }
 
-        var updatedProject = project
+        // Look up the latest project from storage to avoid losing frames
+        // added via "Add Another" (the local `project` is a stale snapshot)
+        guard var updatedProject = projectStorage.projects.first(where: { $0.id == project.id }) else {
+            return
+        }
         let frame = Frame(cropRect: cropRect, aspectRatio: selectedAspectRatio)
         updatedProject.frames.append(frame)
         projectStorage.updateProject(updatedProject)

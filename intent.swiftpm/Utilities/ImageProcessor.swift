@@ -60,6 +60,7 @@ struct ImageProcessor {
     
     /// Resizes an image to fit within a target size while maintaining aspect ratio
     static func resizeImage(_ image: UIImage, to targetSize: CGSize) -> UIImage? {
+        guard image.size.width > 0, image.size.height > 0 else { return nil }
         let widthRatio = targetSize.width / image.size.width
         let heightRatio = targetSize.height / image.size.height
         let ratio = min(widthRatio, heightRatio)
@@ -77,8 +78,9 @@ struct ImageProcessor {
     
     /// Generates a thumbnail from an image
     static func generateThumbnail(_ image: UIImage, size: CGFloat = 200) -> UIImage? {
+        guard image.size.width > 0, image.size.height > 0 else { return nil }
         let targetSize = CGSize(width: size, height: size)
-        
+
         let widthRatio = targetSize.width / image.size.width
         let heightRatio = targetSize.height / image.size.height
         let ratio = max(widthRatio, heightRatio)
@@ -104,12 +106,12 @@ extension UIImage {
     /// Returns the image with proper orientation applied
     var properlyOriented: UIImage {
         if imageOrientation == .up { return self }
-        
-        UIGraphicsBeginImageContextWithOptions(size, false, scale)
-        draw(in: CGRect(origin: .zero, size: size))
-        let normalizedImage = UIGraphicsGetImageFromCurrentImageContext()
-        UIGraphicsEndImageContext()
-        
-        return normalizedImage ?? self
+
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = scale
+        let renderer = UIGraphicsImageRenderer(size: size, format: format)
+        return renderer.image { _ in
+            draw(in: CGRect(origin: .zero, size: size))
+        }
     }
 }

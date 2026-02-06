@@ -4,12 +4,16 @@ import SwiftUI
 /// A row component for displaying a project in the Try Out tab
 struct ProjectRow: View {
     let project: Project
-    
-    private var formattedDate: String {
+
+    private static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
         formatter.timeStyle = .none
-        return formatter.string(from: project.dateCreated)
+        return formatter
+    }()
+
+    private var formattedDate: String {
+        Self.dateFormatter.string(from: project.dateCreated)
     }
     
     var body: some View {

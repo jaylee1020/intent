@@ -352,7 +352,7 @@ struct FullScreenCropView: View {
         } message: {
             Text("The cropped photo has been saved to your photo library.")
         }
-        .permissionDeniedAlert(isPresented: $showingPermissionAlert, for: .photoLibrary)
+        .permissionDeniedAlert(isPresented: $showingPermissionAlert, for: .photoLibrarySave)
         .task {
             // Cache the cropped image on first load
             if croppedImage == nil {
